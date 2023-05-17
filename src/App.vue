@@ -1,27 +1,30 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
+  <div class="swipekey-root">
+    <NavbarComponent />
+  </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import HelloWorld from './components/HelloWorld.vue';
+import NavbarComponent from "./components/NavbarComponent.vue";
 
 export default defineComponent({
   name: 'App',
   components: {
-    HelloWorld
+    NavbarComponent
   }
 });
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+.swipekey-root {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  position:fixed;
+  background-color:rgba(0,0,0,0.5);
+  width:95%;
+  top:0;
+  left:10%;
+  height:100%;
 }
+
 </style>
