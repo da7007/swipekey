@@ -3,61 +3,28 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import * as mongo from "mongodb";
 import cors from "cors";
+import { addToDB } from "./src/addToDB";
+import { findInDB } from "./src/findInDB";
+import * as types from "./src/types";
 
 const app = express();
 const port: number = 3000;
-app.use(cors({
-    origin: 'http://localhost:8080'
-}));
-
-const client: mongo.MongoClient = new mongo.MongoClient("mongodb://localhost");
-
-async function addToDB(user: User) {
-  await client.connect();
-  const db = client.db("swipe-key-db");
-  await db.collection("users").insertOne(user);
-}
-
-async function findInDB(user: User) {
-  await client.connect();
-  const db = client.db("swipe-key-db");
-
-  const users = await db
-    .collection("users")
-    .findOne({ username: user.username });
-  return users;
-}
-
-interface User {
-  _id: mongo.ObjectId;
-  username: string;
-  email: string;
-  password: string;
-  token: string;
-}
-
-interface AuthRequest {
-  username: string;
-  email: string;
-  password: string;
-  token: string;
-}
-
-interface RegisterRequest {
-  username: string;
-  email: string;
-  password: string;
-}
+app.use(
+  cors({
+    methods: ["GET", "POST"],
+    origin: "http://localhost:8080",
+  })
+);
 
 app.post("/auth", async (req, res) => {
-  let request: AuthRequest = {
+  let request: types.AuthRequest = {
     username: req.query.username as string,
     email: req.query.email as string,
     token: req.query.token as string,
     password: req.query.password as string,
   };
 
-  let user: User = {
+  let user: types.User = {
     _id: new mongo.ObjectId(),
     username: request.username,
     email: request.email,
@@ -66,17 +33,17 @@ app.post("/auth", async (req, res) => {
   };
 
   const hashedToken: any = await findInDB(user);
-  const compareToken = await bcrypt.compare(request.token, hashedToken.token); 
+  const compareToken = await bcrypt.compare(request.token, hashedToken.token);
 
   if (compareToken) {
     res.end(JSON.stringify({ tokenValidated: true }));
   } else {
     res.end(JSON.stringify({ tokenValidated: false }));
-  } 
+  }
 });
 
 app.post("/register", async (req, res) => {
-  let request: RegisterRequest = {
+  let request: types.RegisterRequest = {
     username: req.query.username as string,
     email: req.query.email as string,
     password: req.query.password as string,
@@ -88,7 +55,7 @@ app.post("/register", async (req, res) => {
   const hashedPassword = await bcrypt.hash(request.password, salt);
   const hashedToken = await bcrypt.hash(token, salt);
 
-  let user: User = {
+  let user: types.User = {
     _id: new mongo.ObjectId(),
     username: request.username,
     email: request.email,
