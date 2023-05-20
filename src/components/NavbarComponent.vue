@@ -1,7 +1,7 @@
 <template>
   <div class="swipekey-navbar-root">
     <button
-      class="btn btn-outline-success"
+      class="btn btn-outline"
       v-for="NavbarItem in NavbarItems"
       :key="NavbarItem.id"
     @click="showTab(NavbarItem.name)">
@@ -30,9 +30,7 @@ export default defineComponent({
       showingYourSecrets: false as boolean,
       NavbarItems: [
         { id: 0, name: "Your Secrets", link: "#" },
-        { id: 1, name: "User Directory", link: "#" },
-        { id: 2, name: "API Keys", link: "#" },
-        { id: 3, name: "Account and Subscription", link: "#" },
+        { id: 1, name: "User Directory", link: "#" }
       ] as NavbarItem[],
     };
   },

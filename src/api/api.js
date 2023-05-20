@@ -3,25 +3,35 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import * as mongo from "mongodb";
 import cors from "cors";
+import { addToDB } from "./src/addToDB.js";
+import { findSecretInDB, findUserInDB, getAllSecretsInDB } from "./src/findInDB.js";
 const app = express();
 const port = 3000;
 app.use(cors({
-    origin: 'http://localhost:8080'
+    methods: ["GET", "POST"],
+    origin: "*",
 }));
-const client = new mongo.MongoClient("mongodb://localhost");
-async function addToDB(user) {
-    await client.connect();
-    const db = client.db("swipe-key-db");
-    await db.collection("users").insertOne(user);
-}
-async function findInDB(user) {
-    await client.connect();
-    const db = client.db("swipe-key-db");
-    const users = await db
-        .collection("users")
-        .findOne({ username: user.username });
-    return users;
-}
+app.get("/secrets", async (req, res) => {
+    const secrets = await getAllSecretsInDB();
+    res.send({ secrets });
+});
+app.post("/fetch", async (req, res) => {
+    const request = {
+        application: req.query.application,
+        secret_name: req.query.secret_name,
+    };
+    const secret = {
+        _id: new mongo.ObjectId(),
+        application: request.application,
+        secret_name: request.secret_name,
+        secret_value: "",
+        secret_revealed: false,
+    };
+    console.log(request);
+    const fetchedSecret = await findSecretInDB(secret);
+    console.log(fetchedSecret);
+    res.send({ fetchedSecret });
+});
 app.post("/auth", async (req, res) => {
     let request = {
         username: req.query.username,
@@ -36,13 +46,13 @@ app.post("/auth", async (req, res) => {
         password: request.password,
         token: request.token,
     };
-    const hashedToken = await findInDB(user);
+    const hashedToken = await findUserInDB(user);
     const compareToken = await bcrypt.compare(request.token, hashedToken.token);
     if (compareToken) {
-        res.end(JSON.stringify({ tokenValidated: true }));
+        res.send(200);
     }
     else {
-        res.end(JSON.stringify({ tokenValidated: false }));
+        res.send(403);
     }
 });
 app.post("/register", async (req, res) => {
@@ -63,6 +73,7 @@ app.post("/register", async (req, res) => {
         token: hashedToken,
     };
     addToDB(user);
+    console.info(`Token is: ${token}`);
     res.end(JSON.stringify({ token: token }));
 });
 app.listen(port, () => {

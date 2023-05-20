@@ -3,18 +3,44 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import * as mongo from "mongodb";
 import cors from "cors";
-import { addToDB } from "./src/addToDB";
-import { findInDB } from "./src/findInDB";
+import { addToDB } from "./src/addToDB.js";
+import { findSecretInDB, findUserInDB, getAllSecretsInDB } from "./src/findInDB.js";
 import * as types from "./src/types";
 
 const app = express();
 const port: number = 3000;
+
 app.use(
   cors({
     methods: ["GET", "POST"],
-    origin: "http://localhost:8080",
+    origin: "*",
   })
 );
+
+app.get("/secrets", async(req, res) => {
+  const secrets: any = await getAllSecretsInDB();
+
+  res.send({secrets})
+});
+
+app.post("/fetch", async (req, res) => {
+  const request: types.SecretRequest = {
+    application: req.query.application as string,
+    secret_name: req.query.secret_name as string,
+  };
+
+  const secret: types.Secret = {
+    _id: new mongo.ObjectId(),
+    application: request.application,
+    secret_name: request.secret_name,
+    secret_value: "",
+    secret_revealed: false,
+  };
+  console.log(request);
+  const fetchedSecret: any = await findSecretInDB(secret);
+  console.log(fetchedSecret);
+  res.send({ fetchedSecret });
+});
 
 app.post("/auth", async (req, res) => {
   let request: types.AuthRequest = {
@@ -32,13 +58,13 @@ app.post("/auth", async (req, res) => {
     token: request.token,
   };
 
-  const hashedToken: any = await findInDB(user);
+  const hashedToken: any = await findUserInDB(user);
   const compareToken = await bcrypt.compare(request.token, hashedToken.token);
 
   if (compareToken) {
-    res.end(JSON.stringify({ tokenValidated: true }));
+    res.send(200);
   } else {
-    res.end(JSON.stringify({ tokenValidated: false }));
+    res.send(403);
   }
 });
 
@@ -64,7 +90,7 @@ app.post("/register", async (req, res) => {
   };
 
   addToDB(user);
-
+  console.info(`Token is: ${token}`);
   res.end(JSON.stringify({ token: token }));
 });
 

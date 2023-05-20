@@ -6,23 +6,55 @@
       applications. All of these are encrypted and can only be read with your
       SwipeKey master token.
     </p>
+    <div v-if="isAuthenticated" className="add-secret">
+      <h6>Add a new secret for your app:</h6>
+      <input
+        v-model="app_name"
+        type="text"
+        class="form-control"
+        placeholder="Application Name"
+      />
+      <input
+        v-model="secret_name"
+        type="text"
+        class="form-control"
+        placeholder="Secret Name"
+      />
+      <input
+        v-model="secret_value"
+        type="text"
+        class="form-control"
+        placeholder="Secret Value"
+      />
+      <button class="btn btn-success" @click="createSecret()">
+        Add Secret
+      </button>
+    </div>
+
+    <h6>Or to view secrets, please enter your master token:</h6>
     <input
-      @keyup.enter="validateToken(token)"
       v-model="token"
-      class="form-control"
       type="password"
-      placeholder="Enter master token to gain access"
+      class="form-control"
+      placeholder="Enter master token here"
+      @keyup.enter="validateToken(token)"
     />
-    <table class="secrets-table">
+    <button id="fetch-secrets-btn" @click="getSecrets" v-if="isAuthenticated" class="btn btn-success">Fetch Secrets</button>
+    <table v-if="isAuthenticated" class="secrets-table">
       <tr>
-        <th>Id</th>
         <th>Application</th>
-        <th>Encrypted Secret</th>
+        <th>Secret Name</th>
+        <th>Secret Value</th>
       </tr>
-      <tr>
-        <td>0</td>
-        <td>Hello World</td>
-        <td>Testsecret</td>
+      <tr v-for="secret, idx in secrets" :key="idx">
+        <td>{{ secret.application }}</td>
+        <td>{{ secret.secret_name }}</td>
+        <td v-if="!secret.secret_revealed">
+          <button class="btn btn-danger" @click="secret.secret_revealed = true">
+            Reveal
+          </button>
+        </td>
+        <td v-if="secret.secret_revealed">{{ secret.secret_value }}</td>
       </tr>
     </table>
   </div>
@@ -39,24 +71,68 @@ interface ApiRequest {
   token: string;
 }
 
+interface Secret {
+  application: string;
+  secret_name: string;
+  secret_value: string;
+  secret_revealed: boolean;
+}
+
 export default defineComponent({
   name: "YourSecrets",
   data() {
     return {
       token: "" as string,
+      app_name: "" as string,
+      secret_name: "" as string,
+      secret_value: "" as string,
+      isAuthenticated: false,
+      secrets: [] as Secret[],
     };
   },
   methods: {
     async validateToken(token: string) {
       const request: ApiRequest = {
-        username: "dylanarmstrong",
-        email: "dylan.armstrong@dylanarmstrong.net",
-        password: "whatever123",
+        username: "",
+        email: "",
+        password: "",
         token: token,
       };
 
-      const response = await axios.post("http://localhost:3000/auth", request);
-      console.log(response.status);
+      await axios
+        .post("http://localhost:3000/auth", null, { params: request })
+        .then((response) => {
+          if (response.status === 200) {
+            this.isAuthenticated = true;
+          } else {
+            this.isAuthenticated = false;
+          }
+        });
+      },
+    getSecrets() {
+      if(this.isAuthenticated) {
+        axios.get("http://localhost:3000/secrets").then(response => {
+          for(let i in response.data.secrets) {
+            if(this.secrets.length === response.data.secrets.length) {
+              return;
+            } else {
+              this.secrets.push(response.data.secrets[i])
+            }
+            
+          }
+        })
+      }
+    },
+    createSecret() {
+      if (this.isAuthenticated) {
+        let secret: Secret = {
+          application: this.app_name,
+          secret_name: this.secret_name,
+          secret_value: this.secret_value,
+          secret_revealed: false,
+        };
+        this.secrets.push(secret);
+      }
     },
   },
 });
@@ -76,7 +152,17 @@ export default defineComponent({
 }
 .secrets-table {
   position: fixed;
-  top: 150px;
+  top: 225px;
+}
+.add-secret {
+  position:fixed;
+  top:425px;
+  padding:5px;
+}
+.form-control {
+  margin:5px;
+  padding:5px;
+  width:450px;
 }
 th {
   padding: 10px;
@@ -87,9 +173,8 @@ td {
   padding: 10px;
   border: 1px solid white;
 }
-input {
-  position: fixed;
-  width: 200px;
-  height: 35px;
+#fetch-secrets-btn {
+  position:fixed;
+  top:175px;
 }
 </style>
