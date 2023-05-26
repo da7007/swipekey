@@ -33,3 +33,9 @@ export interface Secret {
   secret_value: string;
   secret_revealed: boolean;
 }
+
+export interface LoginRequest {
+  _id: mongo.ObjectId;
+  email: string;
+  password: string;
+}

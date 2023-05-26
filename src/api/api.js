@@ -4,7 +4,7 @@ import crypto from "crypto";
 import * as mongo from "mongodb";
 import cors from "cors";
 import { addToDB } from "./src/addToDB.js";
-import { findSecretInDB, findUserInDB, getAllSecretsInDB } from "./src/findInDB.js";
+import { findUserByEmailInDB, findSecretInDB, findUserInDB, getAllSecretsInDB } from "./src/findInDB.js";
 const app = express();
 const port = 3000;
 app.use(cors({
@@ -31,6 +31,28 @@ app.post("/fetch", async (req, res) => {
     const fetchedSecret = await findSecretInDB(secret);
     console.log(fetchedSecret);
     res.send({ fetchedSecret });
+});
+app.post("/login", async (req, res) => {
+    let request = {
+        _id: new mongo.ObjectId(),
+        email: req.query.email,
+        password: req.query.password,
+    };
+    let user = {
+        _id: new mongo.ObjectId(),
+        username: "",
+        email: request.email,
+        password: request.password,
+        token: ""
+    };
+    const hashedPwd = await findUserByEmailInDB(user);
+    const comparePwd = await bcrypt.compare(request.password, hashedPwd.password);
+    if (comparePwd) {
+        res.send(200);
+    }
+    else {
+        res.send(403);
+    }
 });
 app.post("/auth", async (req, res) => {
     let request = {

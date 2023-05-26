@@ -4,16 +4,14 @@
       class="btn btn-outline"
       v-for="NavbarItem in NavbarItems"
       :key="NavbarItem.id"
-    @click="showTab(NavbarItem.name)">
+    @click="NavbarItem.link">
       {{ NavbarItem.name }}
     </button>
-    <YourSecrets v-if="showingYourSecrets" />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import YourSecrets from "./YourSecrets.vue";
 
 interface NavbarItem {
   id: number;
@@ -22,29 +20,16 @@ interface NavbarItem {
 }
 export default defineComponent({
   name: "NavbarComponent",
-  components: {
-    YourSecrets,
-  },
   data() {
     return {
       showingYourSecrets: false as boolean,
       NavbarItems: [
-        { id: 0, name: "Your Secrets", link: "#" },
+        { id: 0, name: "Your Secrets", link: this.$router.push("/secrets") },
         { id: 1, name: "User Directory", link: "#" }
       ] as NavbarItem[],
     };
   },
-  methods: {
-    showTab(component: string) {
-      switch (component) {
-        case "Your Secrets":
-          this.showingYourSecrets = !this.showingYourSecrets;
-          break;
-        default:
-          break;
-      }
-    },
-  },
+    
 });
 </script>
 <style scoped>

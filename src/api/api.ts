@@ -4,8 +4,10 @@ import crypto from "crypto";
 import * as mongo from "mongodb";
 import cors from "cors";
 import { addToDB } from "./src/addToDB.js";
-import { findSecretInDB, findUserInDB, getAllSecretsInDB } from "./src/findInDB.js";
+import { findUserByEmailInDB, findSecretInDB, findUserInDB, getAllSecretsInDB } from "./src/findInDB.js";
 import * as types from "./src/types";
+import * as dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
 const port: number = 3000;
@@ -42,6 +44,32 @@ app.post("/fetch", async (req, res) => {
   res.send({ fetchedSecret });
 });
 
+app.post("/login", async (req, res) => {
+  let request: types.LoginRequest = {
+    _id: new mongo.ObjectId(),
+    email: req.query.email as string,
+    password: req.query.password as string,
+  };
+
+  let user: types.User = {
+    _id: new mongo.ObjectId(),
+    username: "",
+    email: request.email,
+    password: request.password,
+    token: ""
+  };
+
+  const hashedPwd: any = await findUserByEmailInDB(user);
+  const comparePwd = await bcrypt.compare(request.password, hashedPwd.password);
+  
+  if (comparePwd) {
+
+    res.send(200);
+  } else {
+    res.send(403);
+  }
+});
+
 app.post("/auth", async (req, res) => {
   let request: types.AuthRequest = {
     username: req.query.username as string,
@@ -62,8 +90,10 @@ app.post("/auth", async (req, res) => {
   const compareToken = await bcrypt.compare(request.token, hashedToken.token);
 
   if (compareToken) {
+    process.env.IS_AUTHENTICATED = "true";
     res.send(200);
   } else {
+    process.env.IS_AUTHENTICATED = "false";
     res.send(403);
   }
 });

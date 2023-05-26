@@ -1,12 +1,12 @@
 <template>
-  <div class="swipekey-your-secrets-root">
+  <div v-if=isAuth class="swipekey-your-secrets-root">
     <h4>Your Secrets</h4>
     <p>
       This page contains all of your application secrets for use within your
       applications. All of these are encrypted and can only be read with your
       SwipeKey master token.
     </p>
-    <div v-if="isAuthenticated" className="add-secret">
+    <div v-if="isAuth" className="add-secret">
       <h6>Add a new secret for your app:</h6>
       <input
         v-model="app_name"
@@ -39,8 +39,8 @@
       placeholder="Enter master token here"
       @keyup.enter="validateToken(token)"
     />
-    <button id="fetch-secrets-btn" @click="getSecrets" v-if="isAuthenticated" class="btn btn-success">Fetch Secrets</button>
-    <table v-if="isAuthenticated" class="secrets-table">
+    <button id="fetch-secrets-btn" @click="getSecrets" v-if="isAuth" class="btn btn-success">Fetch Secrets</button>
+    <table class="secrets-table">
       <tr>
         <th>Application</th>
         <th>Secret Name</th>
@@ -80,14 +80,17 @@ interface Secret {
 
 export default defineComponent({
   name: "YourSecrets",
+  props: {
+    isAuthetnicated: Boolean
+  },
   data() {
     return {
       token: "" as string,
       app_name: "" as string,
       secret_name: "" as string,
       secret_value: "" as string,
-      isAuthenticated: false,
       secrets: [] as Secret[],
+      isAuth: this.isAuthetnicated as boolean
     };
   },
   methods: {
@@ -101,16 +104,10 @@ export default defineComponent({
 
       await axios
         .post("http://localhost:3000/auth", null, { params: request })
-        .then((response) => {
-          if (response.status === 200) {
-            this.isAuthenticated = true;
-          } else {
-            this.isAuthenticated = false;
-          }
-        });
+
       },
     getSecrets() {
-      if(this.isAuthenticated) {
+      if(this.isAuth) {
         axios.get("http://localhost:3000/secrets").then(response => {
           for(let i in response.data.secrets) {
             if(this.secrets.length === response.data.secrets.length) {
@@ -124,7 +121,7 @@ export default defineComponent({
       }
     },
     createSecret() {
-      if (this.isAuthenticated) {
+      if (this.isAuth) {
         let secret: Secret = {
           application: this.app_name,
           secret_name: this.secret_name,

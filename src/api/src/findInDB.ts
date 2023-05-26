@@ -13,6 +13,15 @@ export async function findUserInDB(user: types.User) {
   return users;
 }
 
+export async function findUserByEmailInDB(user: types.User) {
+  await client.connect();
+  const db = client.db("swipe-key-db");
+
+  const users = await db
+    .collection("users")
+    .findOne({ email: user.email });
+  return users;
+}
 export async function findSecretInDB(secret: types.Secret) {
   await client.connect();
   const db = client.db("swipe-key-db");
